@@ -31,8 +31,27 @@ func FixedClock(t time.Time) Clock {
 // API for parsing, formatting, manipulation and comparison. All manipulation
 // methods return a new Moment and never mutate the receiver.
 type Moment struct {
-	t     time.Time
-	clock Clock
+	t        time.Time
+	clock    Clock
+	loc      *Locale
+	invalid  bool
+	creation *CreationData
+}
+
+// CreationData records how a Moment was constructed by a parsing function,
+// mirroring moment.js's creationData(). It is returned by Moment.CreationData.
+type CreationData struct {
+	// Input is the original string (or a description of the input) supplied to
+	// the parser.
+	Input string
+	// Format is the format string that produced the Moment, if any.
+	Format string
+	// Locale is the locale name in effect during parsing.
+	Locale string
+	// IsUTC reports whether the Moment was created in UTC.
+	IsUTC bool
+	// Valid reports whether parsing succeeded.
+	Valid bool
 }
 
 // clockOf returns the effective clock for a Moment, falling back to the system
@@ -114,10 +133,24 @@ func (m Moment) IsZero() bool {
 	return m.t.IsZero()
 }
 
-// IsValid reports whether the Moment holds a non-zero instant. It is the
-// inverse of IsZero and mirrors moment.js's isValid.
+// IsValid reports whether the Moment holds a usable instant. It is false for
+// the zero value and for Moments returned by failed parses (see Invalid),
+// mirroring moment.js's isValid.
 func (m Moment) IsValid() bool {
-	return !m.t.IsZero()
+	return !m.invalid && !m.t.IsZero()
+}
+
+// Invalid returns an explicitly invalid Moment, the moral equivalent of
+// moment.invalid(). Its IsValid reports false and Format returns "Invalid
+// date".
+func Invalid() Moment {
+	return Moment{invalid: true, clock: systemClock, creation: &CreationData{Valid: false}}
+}
+
+// CreationData returns how the Moment was produced by a parsing constructor, or
+// nil when it was not created by one.
+func (m Moment) CreationData() *CreationData {
+	return m.creation
 }
 
 // Unix returns the Moment as a Unix timestamp in seconds.
@@ -125,6 +158,10 @@ func (m Moment) Unix() int64 { return m.t.Unix() }
 
 // UnixMilli returns the Moment as a Unix timestamp in milliseconds.
 func (m Moment) UnixMilli() int64 { return m.t.UnixMilli() }
+
+// ValueOf returns the Moment as a Unix timestamp in milliseconds, matching
+// moment.js's valueOf.
+func (m Moment) ValueOf() int64 { return m.t.UnixMilli() }
 
 // Location returns the time zone associated with the Moment.
 func (m Moment) Location() *time.Location { return m.t.Location() }

@@ -38,6 +38,78 @@ func (m Moment) DayOfYear() int { return m.t.YearDay() }
 // ISOWeek returns the ISO 8601 year and week number.
 func (m Moment) ISOWeek() (year, week int) { return m.t.ISOWeek() }
 
+// Quarter returns the calendar quarter of the year (1–4).
+func (m Moment) Quarter() int { return (int(m.t.Month())-1)/3 + 1 }
+
+// Week returns the locale-aware week-of-year number under the Moment's locale.
+func (m Moment) Week() int {
+	w, _ := m.localeWeek(m.localeOf())
+	return w
+}
+
+// WeekYear returns the locale-aware week-numbering year under the Moment's
+// locale (moment's gggg).
+func (m Moment) WeekYear() int {
+	_, y := m.localeWeek(m.localeOf())
+	return y
+}
+
+// ISOWeekYear returns the ISO 8601 week-numbering year (moment's GGGG), which
+// can differ from the calendar year near the start or end of a year.
+func (m Moment) ISOWeekYear() int {
+	y, _ := m.t.ISOWeek()
+	return y
+}
+
+// ISOWeekNumber returns just the ISO 8601 week number (1–53).
+func (m Moment) ISOWeekNumber() int {
+	_, w := m.t.ISOWeek()
+	return w
+}
+
+// ISOWeekday returns the ISO 8601 day of the week: 1 for Monday through 7 for
+// Sunday.
+func (m Moment) ISOWeekday() int {
+	return (int(m.t.Weekday())+6)%7 + 1
+}
+
+// DaysInMonth returns the number of days in the Moment's month (28–31).
+func (m Moment) DaysInMonth() int {
+	return time.Date(m.t.Year(), m.t.Month()+1, 0, 0, 0, 0, 0, m.t.Location()).Day()
+}
+
+// WeeksInYear returns the number of locale weeks in the Moment's year.
+func (m Moment) WeeksInYear() int {
+	dow, doy := m.localeOf().weekRules()
+	return weeksInYearOf(m.t.Year(), dow, doy)
+}
+
+// ISOWeeksInYear returns the number of ISO weeks (52 or 53) in the Moment's ISO
+// week-year.
+func (m Moment) ISOWeeksInYear() int {
+	return weeksInYearOf(m.ISOWeekYear(), 1, 4)
+}
+
+// UTCOffset returns the Moment's zone offset east of UTC in minutes.
+func (m Moment) UTCOffset() int {
+	_, off := m.t.Zone()
+	return off / 60
+}
+
+// IsDST reports whether the Moment falls in daylight saving time, detected by
+// comparing its offset with the standard offsets in January and July.
+func (m Moment) IsDST() bool {
+	_, off := m.t.Zone()
+	loc := m.t.Location()
+	_, janOff := time.Date(m.t.Year(), time.January, 1, 0, 0, 0, 0, loc).Zone()
+	_, julOff := time.Date(m.t.Year(), time.July, 1, 0, 0, 0, 0, loc).Zone()
+	stdOff := janOff
+	if julOff < stdOff {
+		stdOff = julOff
+	}
+	return off > stdOff
+}
+
 // IsBefore reports whether m is strictly before other.
 func (m Moment) IsBefore(other Moment) bool { return m.t.Before(other.t) }
 

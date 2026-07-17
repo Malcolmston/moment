@@ -87,5 +87,45 @@
 //
 // In, UTC and Local reinterpret a Moment in another time zone using
 // time.Location values obtained from time.UTC, time.Local or
-// time.LoadLocation.
+// time.LoadLocation. UTCOffset and SetUTCOffset get and set the zone offset in
+// minutes, and IsDST reports daylight-saving time.
+//
+// # Locales
+//
+// Format, Calendar, FromNow and the humanized relative-time helpers are
+// locale-aware. Select a locale per Moment with Locale, or set the process-wide
+// default with SetGlobalLocale. A representative set of about twenty common
+// locales is bundled (en, en-gb, fr, de, es, it, pt, pt-br, nl, ru, zh-cn,
+// zh-tw, ja, ko, ar, hi, tr, pl, sv, cs); the full moment.js catalogue of ~140
+// locales is not bundled, but the Locale type and RegisterLocale let you add
+// any locale you need. See AvailableLocales for the shipped set.
+//
+//	m.Locale("fr").Format("LLLL") // mardi 4 juillet 2017 14:05
+//	m.Locale("de").FromNow()      // in 3 Tagen
+//
+// The full moment token set is supported by Format and ParseFormat, including
+// Q/Qo, Do, DDD/DDDo, w/wo/ww, W/Wo/WW, e/E, gg/gggg, GG/GGGG, k/kk, x/X, z/zz,
+// runs of S for fractional seconds, and the long-date tokens LT, LTS, L, LL,
+// LLL and LLLL.
+//
+// # Durations
+//
+// Duration is the moment.js duration analogue. Construct one with NewDuration
+// or DurationBetween, convert it with As, read components with Get, do
+// arithmetic with Add and Subtract, humanize it with Humanize, and serialize it
+// to and from ISO-8601 with ISOString and ParseDuration.
+//
+//	d := moment.NewDuration(90, moment.Minute)
+//	d.AsHours()        // 1.5
+//	d.Humanize(true)   // in an hour
+//	d.ISOString()      // PT1H30M
+//
+// # Parsing and validity
+//
+// Beyond Parse (ISO/RFC auto-detection), ParseFormat parses moment tokens,
+// ParseFormatStrict requires an exact match, ParseFormats tries a list of
+// formats, and ParseRFC2822, ParseISO and ParseDuration handle their named
+// formats. FromArray and FromObject build a Moment from components. A failed
+// parse yields an invalid Moment (see Invalid, Moment.IsValid and
+// Moment.CreationData).
 package moment

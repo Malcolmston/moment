@@ -91,22 +91,69 @@ layout. Wrap literal text in square brackets, e.g. `"YYYY [year]"`.
 ## API overview
 
 - **Construct:** `New`, `FromTime`, `Now`, `NowWith`, `Unix`, `UnixMilli`,
-  `DateTime`, `Parse`, `ParseFormat`, `ParseInLocation`, `ParseLayout`.
-- **Format:** `Format`, `FormatLayout`, `ISO`, `String`.
+  `DateTime`, `FromArray`, `FromObject`, `Invalid`.
+- **Parse:** `Parse`, `ParseISO`, `ParseRFC2822`, `ParseFormat`,
+  `ParseFormatStrict`, `ParseFormatLocale`, `ParseFormats`, `ParseInLocation`,
+  `ParseLayout`, `ParseDuration`.
+- **Format:** `Format`, `FormatLayout`, `ISO`, `ToISOString`, `String`.
 - **Manipulate:** `Add`, `Subtract`, `AddDuration`, `StartOf`, `EndOf`, `Set`,
-  `Clone`.
-- **Query:** `Year`, `Month`, `Date`/`Day`, `Hour`, `Minute`, `Second`,
-  `Millisecond`, `Nanosecond`, `Weekday`, `DayOfYear`, `ISOWeek`, `IsLeapYear`.
+  `SetAll`, `SetUTCOffset`, `Clone`.
+- **Query:** `Year`, `Quarter`, `Month`, `Date`/`Day`, `Hour`, `Minute`,
+  `Second`, `Millisecond`, `Nanosecond`, `Weekday`, `DayOfYear`, `ISOWeek`,
+  `ISOWeekYear`, `ISOWeekNumber`, `ISOWeekday`, `Week`, `WeekYear`,
+  `DaysInMonth`, `WeeksInYear`, `ISOWeeksInYear`, `UTCOffset`, `IsDST`,
+  `IsLeapYear`, `IsValid`, `CreationData`.
 - **Compare:** `IsBefore`, `IsAfter`, `IsSame`, `IsSameOrBefore`,
-  `IsSameOrAfter`, `IsBetween`, `IsSameUnit`.
+  `IsSameOrAfter`, `IsBetween`, `IsSameUnit`, and package-level `Max` / `Min`.
 - **Diff:** `Diff` (float), `DiffInt`, `DiffDuration`.
 - **Relative:** `FromNow`, `From`, `To`, `ToNow`, `Calendar`, `CalendarNow`,
   and the package-level `Humanize`.
+- **Durations:** `NewDuration`, `DurationBetween`, `DurationFromTime`,
+  `ParseDuration`; methods `As`, `Get`, `Add`, `Subtract`, `Abs`, `Clone`,
+  `Humanize`, `ISOString`, `Locale`.
+- **Locales:** `Locale`, `LocaleName`, `LocaleData`, `RegisterLocale`,
+  `LookupLocale`, `AvailableLocales`, `SetGlobalLocale`, `GlobalLocale`,
+  `SetRelativeTimeThreshold`.
 - **Time zones:** `In`, `UTC`, `Local`, `Location`.
 
-Units accept the `Unit` constants (`Year`, `Month`, `Week`, `Day`, `Date`,
-`Hour`, `Minute`, `Second`, `Millisecond`) as well as common moment.js aliases
-such as `"days"` or `"h"`.
+Units accept the `Unit` constants (`Year`, `Quarter`, `Month`, `Week`,
+`ISOWeek`, `Day`, `Date`, `DayOfYear`, `Hour`, `Minute`, `Second`,
+`Millisecond`) as well as common moment.js aliases such as `"days"` or `"h"`.
+
+## Locales
+
+Formatting and relative time are locale-aware. Select a locale per value with
+`Locale`, or set the process default with `SetGlobalLocale`:
+
+```go
+m.Locale("fr").Format("LLLL") // mardi 4 juillet 2017 14:05
+m.Locale("de").FromNow()      // in 3 Tagen
+```
+
+About twenty common locales are bundled: `en`, `en-gb`, `fr`, `de`, `es`, `it`,
+`pt`, `pt-br`, `nl`, `ru`, `zh-cn`, `zh-tw`, `ja`, `ko`, `ar`, `hi`, `tr`, `pl`,
+`sv`, `cs`. The full moment.js catalogue of ~140 locales is **not** bundled, but
+the `Locale` type and `RegisterLocale` let you add any locale you need.
+
+## Durations
+
+```go
+d := moment.NewDuration(1, moment.Year).
+	Add(moment.NewDuration(2, moment.Month))
+d.AsMonths()      // 14
+d.ISOString()     // P1Y2M
+d.Humanize(true)  // in a year
+
+moment.ParseDuration("P1Y2M10DT2H30M") // round-trips via ISOString
+```
+
+## Format tokens (extended)
+
+Beyond the table above, `Format` and `ParseFormat` support the full moment
+token set: `Q`/`Qo`, `Do`, `DDD`/`DDDo`/`DDDD`, `w`/`wo`/`ww`, `W`/`Wo`/`WW`,
+`e`/`E`, `gg`/`gggg`, `GG`/`GGGG`, `k`/`kk`, `x`/`X`, `z`/`zz`, runs of `S` for
+fractional seconds, and the long-date tokens `LT`, `LTS`, `L`, `LL`, `LLL`,
+`LLLL`.
 
 ## License
 

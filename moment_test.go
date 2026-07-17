@@ -169,7 +169,14 @@ func TestParseLayoutAndInLocation(t *testing.T) {
 
 func TestSupportedTokens(t *testing.T) {
 	toks := SupportedTokens()
-	if len(toks) == 0 || toks[0] != "YYYY" {
+	found := false
+	for _, tk := range toks {
+		if tk == "YYYY" {
+			found = true
+			break
+		}
+	}
+	if len(toks) == 0 || !found {
 		t.Fatalf("SupportedTokens = %v", toks)
 	}
 }

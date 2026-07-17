@@ -28,11 +28,13 @@ func (m Moment) Diff(other Moment, unit Unit) float64 {
 	switch normalizeUnit(unit) {
 	case Year:
 		return monthDiff(m.t, other.t) / 12
+	case Quarter:
+		return monthDiff(m.t, other.t) / 3
 	case Month:
 		return monthDiff(m.t, other.t)
-	case Week:
+	case Week, ISOWeek:
 		return m.t.Sub(other.t).Hours() / (24 * 7)
-	case Day, Date:
+	case Day, Date, DayOfYear:
 		return m.t.Sub(other.t).Hours() / 24
 	case Hour:
 		return m.t.Sub(other.t).Hours()
