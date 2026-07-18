@@ -3,6 +3,31 @@
 All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0]
+
+Further moment.js parity: conversion/inspection, component setters, locale
+introspection and duration/parse helpers (~47 new exported identifiers, all
+standard-library-only).
+
+### Added
+
+- **Moment conversion & inspection.** `ToArray`, `ToObject`, `ToDate`, `ToJSON`,
+  `ToISOStringZone` (moment's `toISOString(true)`), generic `Get(unit)`,
+  `DaysInYear`, `IsUTC`, `IsLocal`, `ZoneAbbr`, `ZoneName` and locale-aware
+  `LocaleWeekday`. Package predicates `IsMoment`, `IsDuration`, `IsDate`.
+- **Component setters.** `SetYear`, `SetMonth`, `SetQuarter`, `SetDate`,
+  `SetDayOfYear`, `SetHour`, `SetMinute`, `SetSecond`, `SetMillisecond`, plus the
+  week-relative `SetWeekday` (moment's `day(n)`) and `SetISOWeekday`.
+- **Locale introspection.** `Months`, `MonthsShort`, `Weekdays`,
+  `WeekdaysShort`, `WeekdaysMin`, `MonthName`, `MonthShortName`, `WeekdayName`,
+  `WeekdayShortName`, `WeekdayMinName`, `Ordinal`, `FirstDayOfWeek`,
+  `FirstWeekContainsDate`, `LongDateFormat`, `Meridiem` and `NormalizeUnit`
+  (moment's `normalizeUnits`).
+- **Durations.** `Duration.ToJSON`, `Duration.ValueOf` and the object
+  constructor `NewDurationFromObject` (moment's `duration({...})`).
+- **Calendar & parsing.** `CalendarWith` (custom calendar templates) and
+  `ParseZone` (moment's `parseZone`, preserving the input's UTC offset).
+
 ## [0.2.0]
 
 Major expansion toward moment.js parity: internationalization and durations.
