@@ -465,7 +465,11 @@ func (l *Locale) pastFuture(future bool, output string) string {
 
 // ISOString serializes the Duration as an ISO-8601 duration such as
 // "P1Y2M10DT2H30M". A zero Duration is "P0D". The output uses the stored
-// months, days and milliseconds without converting between them.
+// months, days and milliseconds without converting between them. Matching
+// moment.js, a mixed-sign Duration carries an overall sign taken from the
+// total length, and any component group whose own sign differs from that total
+// is rendered with its own leading minus, e.g. {years:-1, hours:1} renders as
+// "-P1YT-1H".
 func (d Duration) ISOString() string {
 	seconds := math.Abs(float64(d.ms)) / 1000
 	days := d.days
@@ -487,37 +491,70 @@ func (d Duration) ISOString() string {
 	if total == 0 {
 		return "P0D"
 	}
-	sign := ""
-	if total < 0 {
-		sign = "-"
+	totalSign := signOf(total)
+	// Each component group gets a leading minus only when its own sign differs
+	// from the total's, mirroring moment.js toISOString.
+	groupSign := func(componentSign int) string {
+		if componentSign != totalSign {
+			return "-"
+		}
+		return ""
 	}
+	ymSign := groupSign(signInt(d.months))
+	daysSign := groupSign(signInt(d.days))
+	hmsSign := groupSign(signOf(float64(d.ms)))
 
 	var b strings.Builder
-	b.WriteString(sign)
+	if totalSign < 0 {
+		b.WriteByte('-')
+	}
 	b.WriteByte('P')
 	if years != 0 {
-		fmt.Fprintf(&b, "%dY", years)
+		fmt.Fprintf(&b, "%s%dY", ymSign, years)
 	}
 	if months != 0 {
-		fmt.Fprintf(&b, "%dM", months)
+		fmt.Fprintf(&b, "%s%dM", ymSign, months)
 	}
 	if days != 0 {
-		fmt.Fprintf(&b, "%dD", days)
+		fmt.Fprintf(&b, "%s%dD", daysSign, days)
 	}
 	if hours != 0 || minutes != 0 || seconds != 0 {
 		b.WriteByte('T')
 		if hours != 0 {
-			fmt.Fprintf(&b, "%dH", hours)
+			fmt.Fprintf(&b, "%s%dH", hmsSign, hours)
 		}
 		if minutes != 0 {
-			fmt.Fprintf(&b, "%dM", minutes)
+			fmt.Fprintf(&b, "%s%dM", hmsSign, minutes)
 		}
 		if seconds != 0 {
-			b.WriteString(strconv.FormatFloat(seconds, 'f', -1, 64))
-			b.WriteByte('S')
+			fmt.Fprintf(&b, "%s%sS", hmsSign, strconv.FormatFloat(seconds, 'f', -1, 64))
 		}
 	}
 	return b.String()
+}
+
+// signOf returns -1, 0 or 1 according to the sign of x.
+func signOf(x float64) int {
+	switch {
+	case x < 0:
+		return -1
+	case x > 0:
+		return 1
+	default:
+		return 0
+	}
+}
+
+// signInt returns -1, 0 or 1 according to the sign of x.
+func signInt(x int) int {
+	switch {
+	case x < 0:
+		return -1
+	case x > 0:
+		return 1
+	default:
+		return 0
+	}
 }
 
 // String returns the Duration's ISO-8601 representation.

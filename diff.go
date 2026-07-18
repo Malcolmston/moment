@@ -5,20 +5,28 @@ import (
 	"time"
 )
 
-// monthDiff computes a - b measured in fractional months, following the
-// algorithm used by moment.js so that partial months interpolate smoothly.
+// monthDiff computes a - b measured in fractional months, following moment.js's
+// algorithm so that partial months interpolate smoothly. The month anchors are
+// advanced with addMonths, which clamps the day of the month, so end-of-month
+// boundaries agree with moment (for example February 29 minus January 30 is
+// exactly one month).
 func monthDiff(a, b time.Time) float64 {
-	wholeMonths := (a.Year()-b.Year())*12 + (int(a.Month()) - int(b.Month()))
-	anchor := b.AddDate(0, wholeMonths, 0)
-	var adjust float64
-	if a.Sub(anchor) < 0 {
-		anchor2 := b.AddDate(0, wholeMonths-1, 0)
-		adjust = float64(a.Sub(anchor)) / float64(anchor.Sub(anchor2))
-	} else {
-		anchor2 := b.AddDate(0, wholeMonths+1, 0)
-		adjust = float64(a.Sub(anchor)) / float64(anchor2.Sub(anchor))
+	// moment normalizes so the earlier-in-month operand is subtracted, then
+	// negates, which keeps the fractional adjustment well behaved.
+	if a.Day() < b.Day() {
+		return -monthDiff(b, a)
 	}
-	return float64(wholeMonths) + adjust
+	wholeMonths := (b.Year()-a.Year())*12 + (int(b.Month()) - int(a.Month()))
+	anchor := addMonths(a, wholeMonths)
+	var adjust float64
+	if b.Sub(anchor) < 0 {
+		anchor2 := addMonths(a, wholeMonths-1)
+		adjust = float64(b.Sub(anchor)) / float64(anchor.Sub(anchor2))
+	} else {
+		anchor2 := addMonths(a, wholeMonths+1)
+		adjust = float64(b.Sub(anchor)) / float64(anchor2.Sub(anchor))
+	}
+	return -(float64(wholeMonths) + adjust)
 }
 
 // Diff returns the signed difference m - other expressed in the given unit as a

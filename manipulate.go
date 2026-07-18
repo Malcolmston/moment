@@ -57,17 +57,54 @@ func normalizeUnit(u Unit) Unit {
 	}
 }
 
+// addMonths returns t advanced by n calendar months following moment.js's
+// day-of-month clamping: when the original day exceeds the length of the target
+// month (for example January 31 + 1 month) the result is pinned to the last day
+// of that month (February 28/29) rather than overflowing into the next month as
+// time.Time.AddDate would. Years and quarters are expressed as multiples of a
+// month so they clamp the same way.
+func addMonths(t time.Time, n int) time.Time {
+	y, mo, d := t.Date()
+	h, mi, s := t.Clock()
+	ns := t.Nanosecond()
+	loc := t.Location()
+	total := (int(mo) - 1) + n
+	ny := y + floorDiv(total, 12)
+	nmo := time.Month(floorMod(total, 12) + 1)
+	if dim := daysInMonthOf(ny, nmo); d > dim {
+		d = dim
+	}
+	return time.Date(ny, nmo, d, h, mi, s, ns, loc)
+}
+
+// daysInMonthOf returns the number of days in the given calendar month.
+func daysInMonthOf(year int, month time.Month) int {
+	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
+}
+
+// floorMod implements floored (toward negative infinity) integer modulo, so
+// month bubbling works for negative totals. It complements the package-level
+// floorDiv.
+func floorMod(a, b int) int {
+	m := a % b
+	if m != 0 && ((a < 0) != (b < 0)) {
+		m += b
+	}
+	return m
+}
+
 // Add returns a new Moment advanced by n of the given unit. Calendar units
-// (years, months, weeks, days) use civil arithmetic via AddDate; clock units
-// use fixed durations.
+// (years, months, weeks, days) use civil arithmetic; year, quarter and month
+// arithmetic clamps the day of the month like moment.js (January 31 + 1 month
+// is February 28/29). Clock units use fixed durations.
 func (m Moment) Add(n int, unit Unit) Moment {
 	switch normalizeUnit(unit) {
 	case Year:
-		m.t = m.t.AddDate(n, 0, 0)
+		m.t = addMonths(m.t, n*12)
 	case Quarter:
-		m.t = m.t.AddDate(0, n*3, 0)
+		m.t = addMonths(m.t, n*3)
 	case Month:
-		m.t = m.t.AddDate(0, n, 0)
+		m.t = addMonths(m.t, n)
 	case Week, ISOWeek:
 		m.t = m.t.AddDate(0, 0, n*7)
 	case Day, Date, DayOfYear:
@@ -164,20 +201,30 @@ func (m Moment) EndOf(unit Unit) Moment {
 }
 
 // Set returns a new Moment with a single component replaced by value. The
-// Quarter unit moves to the first month of that quarter; DayOfYear sets the
-// 1-based day of the year.
+// Quarter unit keeps the month's position within the quarter; DayOfYear sets
+// the 1-based day of the year. Changing the year, quarter or month clamps the
+// day of the month like moment.js: setting May 31 to April yields April 30
+// rather than overflowing into May.
 func (m Moment) Set(unit Unit, value int) Moment {
 	y, mo, d := m.t.Date()
 	h, mi, s := m.t.Clock()
 	ns := m.t.Nanosecond()
 	loc := m.t.Location()
+	clamp := false
 	switch normalizeUnit(unit) {
 	case Year:
 		y = value
+		clamp = true
 	case Quarter:
-		mo = time.Month((value-1)*3 + 1)
+		// Match moment.js quarter(value): keep the current month's position
+		// within its quarter (month % 3) rather than snapping to the first
+		// month, and let normalization handle any year bubbling.
+		offset := (int(mo) - 1) % 3
+		mo = time.Month((value-1)*3 + offset + 1)
+		clamp = true
 	case Month:
 		mo = time.Month(value)
+		clamp = true
 	case Day, Date:
 		d = value
 	case DayOfYear:
@@ -191,6 +238,16 @@ func (m Moment) Set(unit Unit, value int) Moment {
 		s = value
 	case Millisecond:
 		ns = value * int(time.Millisecond)
+	}
+	if clamp {
+		// Normalize an out-of-range month (quarter bubbling) before clamping
+		// the day to the target month's length, matching moment's setters.
+		ny := y + floorDiv(int(mo)-1, 12)
+		nmo := time.Month(floorMod(int(mo)-1, 12) + 1)
+		if dim := daysInMonthOf(ny, nmo); d > dim {
+			d = dim
+		}
+		y, mo = ny, nmo
 	}
 	m.t = time.Date(y, mo, d, h, mi, s, ns, loc)
 	return m

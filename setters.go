@@ -11,8 +11,10 @@ func (m Moment) SetYear(y int) Moment { return m.Set(Year, y) }
 // beyond a month's length rolls forward as in time.Date.
 func (m Moment) SetMonth(mo time.Month) Moment { return m.Set(Month, int(mo)) }
 
-// SetQuarter returns a new Moment moved to the first month of quarter q (1–4),
-// keeping the day and time of day, matching moment.js's quarter(value).
+// SetQuarter returns a new Moment moved to quarter q, matching moment.js's
+// quarter(value). Following moment, the month keeps its position within the
+// quarter (its month-mod-3 offset) rather than snapping to the first month, and
+// values outside 1–4 bubble the year forward or backward.
 func (m Moment) SetQuarter(q int) Moment { return m.Set(Quarter, q) }
 
 // SetDate returns a new Moment with the day of the month replaced by d, the

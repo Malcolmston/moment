@@ -3,6 +3,10 @@
 All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+- Upstream-parity fixes: moment.js day-of-month clamping in `Add`/`Subtract` and the year/quarter/month setters, month-offset-preserving quarter setter, clamped month anchors in `Diff` (end-of-month cases), sign-outside-padding negative-year `YYYY`/`YY` formatting, and mixed-sign `Duration.ISOString`; added synced `parity_test.go`/`parity_extra_test.go` vectors.
+
 ## [0.3.0]
 
 Further moment.js parity: conversion/inspection, component setters, locale

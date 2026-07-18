@@ -162,23 +162,23 @@ func (m Moment) renderToken(tok string, loc *Locale) string {
 		_, w := t.ISOWeek()
 		return fmt.Sprintf("%02d", w)
 	case "YYYY":
-		return fmt.Sprintf("%04d", t.Year())
+		return zeroFillSigned(t.Year(), 4)
 	case "YY":
-		return fmt.Sprintf("%02d", t.Year()%100)
+		return zeroFillSigned(t.Year()%100, 2)
 	case "Y":
 		return strconv.Itoa(t.Year())
 	case "gg":
 		_, gy := m.localeWeek(loc)
-		return fmt.Sprintf("%02d", gy%100)
+		return zeroFillSigned(gy%100, 2)
 	case "gggg":
 		_, gy := m.localeWeek(loc)
-		return fmt.Sprintf("%04d", gy)
+		return zeroFillSigned(gy, 4)
 	case "GG":
 		gy, _ := t.ISOWeek()
-		return fmt.Sprintf("%02d", gy%100)
+		return zeroFillSigned(gy%100, 2)
 	case "GGGG":
 		gy, _ := t.ISOWeek()
-		return fmt.Sprintf("%04d", gy)
+		return zeroFillSigned(gy, 4)
 	case "A":
 		return loc.meridiem(t.Hour(), t.Minute(), false)
 	case "a":
@@ -236,6 +236,16 @@ func (l *Locale) longDateFormat(tok string) string {
 		return l.LongDateFormats.LLLL
 	}
 	return tok
+}
+
+// zeroFillSigned renders n zero-padded to at least width digits, placing any
+// minus sign outside the padding (moment.js's zeroFill). For example a year of
+// -1 with width 4 renders as "-0001" rather than Go's "%04d" result "-001".
+func zeroFillSigned(n, width int) string {
+	if n < 0 {
+		return "-" + fmt.Sprintf("%0*d", width, -n)
+	}
+	return fmt.Sprintf("%0*d", width, n)
 }
 
 // hour12 converts a 24-hour value to the 1–12 range used by the h/hh tokens.
